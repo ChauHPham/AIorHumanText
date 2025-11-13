@@ -148,4 +148,4 @@ with gr.Blocks(title="AI Text Detector", theme=gr.themes.Soft()) as app:
     )
 
 if __name__ == "__main__":
-    app.launch(share=False, server_name="0.0.0.0", server_port=7860)
+    app.launch(share=True, server_name="0.0.0.0", server_port=7860)
