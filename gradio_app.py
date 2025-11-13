@@ -46,13 +46,13 @@ def load_model():
             tokenizer = model.tokenizer
         except Exception as e:
             print(f"Failed to load model: {e}")
-            print("Using base RoBERTa model instead.")
-            model = DetectorModel("roberta-base")
+            print("Using Desklib pre-trained model instead.")
+            model = DetectorModel("desklib/ai-text-detector-v1.01", use_desklib=True)
             tokenizer = model.tokenizer
     else:
-        print("No trained model found. Using base RoBERTa model for demo.")
-        # Use a base model for demonstration
-        model = DetectorModel("roberta-base")
+        print("No trained model found. Using Desklib pre-trained AI detector model.")
+        # Use Desklib pre-trained model (no training needed!)
+        model = DetectorModel("desklib/ai-text-detector-v1.01", use_desklib=True)
         tokenizer = model.tokenizer
 
 # Load model lazily (on first use) to avoid startup issues
@@ -76,29 +76,16 @@ def detect_text(text):
         return "Please enter some text to analyze."
     
     try:
-        # Tokenize the input text
-        inputs = tokenizer(
-            text,
-            truncation=True,
-            padding="max_length",
-            max_length=256,
-            return_tensors="pt"
-        )
-        
-        # Get prediction
-        with torch.no_grad():
-            outputs = model.model(**inputs)
-            probabilities = torch.softmax(outputs.logits, dim=1)
-            human_prob = probabilities[0][0].item()
-            ai_prob = probabilities[0][1].item()
+        # Use the model's predict method
+        ai_prob, predicted_label = model.predict(text, max_length=768, threshold=0.5)
         
         # Determine prediction
-        if ai_prob > human_prob:
+        if predicted_label == 1:
             label = "🤖 AI-generated"
             confidence = ai_prob
         else:
             label = "🧑 Human-written"
-            confidence = human_prob
+            confidence = 1 - ai_prob  # Human probability is 1 - AI probability
         
         return f"{label} (confidence: {confidence:.1%})"
         

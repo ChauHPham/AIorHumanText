@@ -1,0 +1,5 @@
+🚀 Starting training (simple mode - no multiprocessing)
+============================================================
+
+📖 Loading data from data/ai_vs_human_text.csv...
+[mutex.cc : 452] RAW: Lock blocking 0x15b462bf8   @
