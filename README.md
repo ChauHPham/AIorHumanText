@@ -1,6 +1,7 @@
 # AI Text Detector
 
 A learning project for detecting AI-generated vs. human-written text with a modular Python package, YAML configs, GPU auto-detection, CLI, and a **Gradio web interface**.
+<img width="3794" height="1082" alt="image" src="https://github.com/user-attachments/assets/c0b36d58-b3d1-4629-ad8d-2dedaea7f1c3" />
 
 ## 🌐 Web Interface (Gradio)
 
