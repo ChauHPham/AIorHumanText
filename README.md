@@ -1,8 +1,25 @@
-# AI Text Detector (CLI)
+# AI Text Detector
 
-A learning project for detecting AI-generated vs. human-written text with a modular Python package, YAML configs, GPU auto-detection, and a CLI.
+A learning project for detecting AI-generated vs. human-written text with a modular Python package, YAML configs, GPU auto-detection, CLI, and a **Gradio web interface**.
 
-## Quickstart
+## 🌐 Web Interface (Gradio)
+
+**Try it now on Google Colab** (works perfectly on Mac M2!):
+
+```python
+!pip install -q transformers torch pandas gradio kagglehub
+!git clone https://github.com/ChauHPham/AITextDetector.git
+%cd AITextDetector
+!python gradio_app.py
+```
+
+Get a **public shareable link** instantly! See [DEPLOY.md](DEPLOY.md) for deployment options.
+
+### 🍎 Mac M2 Users
+
+**Google Colab is recommended** - local training may fail due to PyTorch MPS mutex lock issues. The Gradio app works great in Colab with free GPU!
+
+## Quickstart (CLI)
 
 ```bash
 # 1) Create & activate a virtualenv (recommended)
@@ -46,3 +63,12 @@ See `configs/default.yaml`. Key fields:
 * Labels standardized to `0=human`, `1=ai`.
 * Mixed precision (fp16) auto-enables on CUDA.
 * Evaluate with accuracy, macro-F1, and confusion matrix.
+* **Mac M2 users**: Use Google Colab for training (see above) to avoid PyTorch MPS bugs.
+
+## Deployment
+
+See [DEPLOY.md](DEPLOY.md) for:
+- Google Colab setup (recommended for Mac M2)
+- Hugging Face Spaces deployment (`gradio deploy`)
+- Docker deployment
+- Troubleshooting guide
