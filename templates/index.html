@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Text Detector Quiz</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 900px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+        }
+
+        .score-board {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .score-item {
+            text-align: center;
+        }
+
+        .score-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .score-value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .quiz-text-container {
+            margin: 30px 0;
+            position: relative;
+        }
+
+        .quiz-text {
+            background: #f8f9ff;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            padding: 30px;
+            max-height: 400px;
+            overflow-y: auto;
+            text-align: left;
+            font-size: 1.1em;
+            line-height: 1.8;
+            color: #333;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .text-loading {
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f5f5f5;
+            border-radius: 15px;
+        }
+
+        .answer-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 30px 0;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 20px 50px;
+            border-radius: 25px;
+            font-size: 1.3em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+            max-width: 250px;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active:not(:disabled) {
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-ai {
+            background: linear-gradient(135deg, #e17055 0%, #d63031 100%);
+        }
+
+        .btn-human {
+            background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+        }
+
+        .btn-next {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin-top: 20px;
+        }
+
+        .result-panel {
+            display: none;
+            margin-top: 30px;
+            padding: 30px;
+            background: #f8f9ff;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .result-panel.show {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-title {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .result-correct {
+            color: #00b894;
+        }
+
+        .result-incorrect {
+            color: #d63031;
+        }
+
+        .result-details {
+            margin: 20px 0;
+            font-size: 1.1em;
+        }
+
+        .result-detail-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .model-prediction {
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+        }
+
+        .model-prediction-title {
+            font-weight: bold;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .probabilities {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .prob-item {
+            background: #f8f9ff;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .prob-label {
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .prob-bar {
+            background: #e0e0e0;
+            height: 10px;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 5px;
+        }
+
+        .prob-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.5s ease;
+        }
+
+        .prob-value {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .loading {
+            display: none;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #ffe6e6;
+            color: #d63031;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 5px solid #d63031;
+        }
+
+        .start-screen {
+            text-align: center;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 20px 60px;
+            border-radius: 25px;
+            font-size: 1.5em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 30px;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .quiz-screen {
+            display: none;
+        }
+
+        .quiz-screen.active {
+            display: block;
+        }
+
+        .question-selector {
+            margin: 30px 0;
+        }
+
+        .question-selector-label {
+            font-size: 1.1em;
+            color: #666;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .question-options {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .question-option {
+            background: white;
+            border: 3px solid #ddd;
+            padding: 15px 30px;
+            border-radius: 15px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #666;
+        }
+
+        .question-option:hover {
+            border-color: #667eea;
+            color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .question-option.selected {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+            color: white;
+        }
+
+        .progress-indicator {
+            background: #f8f9ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .completion-screen {
+            display: none;
+            text-align: center;
+        }
+
+        .completion-screen.active {
+            display: block;
+        }
+
+        .completion-title {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .completion-stats {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin: 30px 0;
+        }
+
+        .completion-stat {
+            margin: 15px 0;
+            font-size: 1.3em;
+        }
+
+        .completion-stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Start Screen -->
+        <div class="start-screen" id="startScreen">
+            <h1>📝 AI Text Detector Quiz</h1>
+            <p class="subtitle">Test your ability to distinguish AI-generated text from human-written text!</p>
+            <p class="subtitle" style="margin-top: 20px; color: #999; font-size: 0.95em;">
+                You'll be shown text samples one at a time. Guess whether each text is AI-generated or Human-written, 
+                then see if you're correct and how the AI model predicts it.
+            </p>
+            <div class="question-selector">
+                <div class="question-selector-label">Select number of questions:</div>
+                <div class="question-options">
+                    <div class="question-option selected" data-questions="10">10 Questions</div>
+                    <div class="question-option" data-questions="20">20 Questions</div>
+                    <div class="question-option" data-questions="30">30 Questions</div>
+                </div>
+            </div>
+            <button class="start-btn" id="startBtn">Start Quiz</button>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div class="quiz-screen" id="quizScreen">
+            <h1>📝 AI Text Detector Quiz</h1>
+            
+            <div class="progress-indicator" id="progressIndicator">
+                Question <span id="currentQuestion">0</span> of <span id="totalQuestions">0</span>
+            </div>
+            
+            <div class="score-board">
+                <div class="score-item">
+                    <div class="score-label">Score</div>
+                    <div class="score-value" id="score">0/0</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">Correct</div>
+                    <div class="score-value" id="correct">0</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">Accuracy</div>
+                    <div class="score-value" id="accuracy">0%</div>
+                </div>
+            </div>
+
+            <div class="quiz-text-container">
+                <div class="text-loading" id="textLoading">
+                    <div class="spinner"></div>
+                </div>
+                <div id="quizText" class="quiz-text" style="display: none;"></div>
+            </div>
+
+            <div class="answer-buttons" id="answerButtons">
+                <button class="btn btn-ai" id="aiBtn" disabled>🤖 AI-generated</button>
+                <button class="btn btn-human" id="humanBtn" disabled>👤 Human-written</button>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Checking answer...</p>
+            </div>
+
+            <div class="result-panel" id="resultPanel">
+                <div class="result-title" id="resultTitle"></div>
+                <div class="result-details" id="resultDetails"></div>
+                <div class="model-prediction" id="modelPrediction"></div>
+                <button class="btn btn-next" id="nextBtn">Next Question →</button>
+            </div>
+
+            <div id="error" class="error" style="display: none;"></div>
+        </div>
+
+        <!-- Completion Screen -->
+        <div class="completion-screen" id="completionScreen">
+            <h1 class="completion-title">🎉 Quiz Complete!</h1>
+            <div class="completion-stats">
+                <div class="completion-stat">
+                    <div>Final Score</div>
+                    <div class="completion-stat-value" id="finalScore">0/0</div>
+                </div>
+                <div class="completion-stat">
+                    <div>Correct Answers</div>
+                    <div class="completion-stat-value" id="finalCorrect">0</div>
+                </div>
+                <div class="completion-stat">
+                    <div>Accuracy</div>
+                    <div class="completion-stat-value" id="finalAccuracy">0%</div>
+                </div>
+            </div>
+            <button class="start-btn" id="restartBtn">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let currentTextId = null;
+        let currentTrueLabel = null;
+        let score = { correct: 0, total: 0 };
+        let answerSelected = false;
+        let totalQuestions = 10;
+        let currentQuestion = 0;
+        let usedTextIds = new Set(); // Track used texts to avoid repeats
+
+        // Elements
+        const startScreen = document.getElementById('startScreen');
+        const quizScreen = document.getElementById('quizScreen');
+        const completionScreen = document.getElementById('completionScreen');
+        const startBtn = document.getElementById('startBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const quizText = document.getElementById('quizText');
+        const textLoading = document.getElementById('textLoading');
+        const aiBtn = document.getElementById('aiBtn');
+        const humanBtn = document.getElementById('humanBtn');
+        const loading = document.getElementById('loading');
+        const resultPanel = document.getElementById('resultPanel');
+        const resultTitle = document.getElementById('resultTitle');
+        const resultDetails = document.getElementById('resultDetails');
+        const modelPrediction = document.getElementById('modelPrediction');
+        const nextBtn = document.getElementById('nextBtn');
+        const error = document.getElementById('error');
+        const scoreEl = document.getElementById('score');
+        const correctEl = document.getElementById('correct');
+        const accuracyEl = document.getElementById('accuracy');
+        const progressIndicator = document.getElementById('progressIndicator');
+        const currentQuestionEl = document.getElementById('currentQuestion');
+        const totalQuestionsEl = document.getElementById('totalQuestions');
+        const finalScoreEl = document.getElementById('finalScore');
+        const finalCorrectEl = document.getElementById('finalCorrect');
+        const finalAccuracyEl = document.getElementById('finalAccuracy');
+
+        // Question selector
+        const questionOptions = document.querySelectorAll('.question-option');
+        questionOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                questionOptions.forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+                totalQuestions = parseInt(option.dataset.questions);
+            });
+        });
+
+        // Start quiz
+        startBtn.addEventListener('click', () => {
+            // Reset state
+            score = { correct: 0, total: 0 };
+            currentQuestion = 0;
+            usedTextIds.clear();
+            updateProgress();
+            updateScore();
+            
+            startScreen.style.display = 'none';
+            completionScreen.classList.remove('active');
+            quizScreen.classList.add('active');
+            loadNextQuestion();
+        });
+
+        // Restart quiz
+        restartBtn.addEventListener('click', () => {
+            completionScreen.classList.remove('active');
+            startScreen.style.display = 'block';
+        });
+
+        // Answer buttons
+        aiBtn.addEventListener('click', () => checkAnswer('AI-generated'));
+        humanBtn.addEventListener('click', () => checkAnswer('Human-written'));
+        nextBtn.addEventListener('click', loadNextQuestion);
+
+        async function loadNextQuestion() {
+            // Check if quiz is complete (after answering all questions)
+            if (currentQuestion >= totalQuestions) {
+                showCompletionScreen();
+                return;
+            }
+
+            // Reset state
+            answerSelected = false;
+            resultPanel.classList.remove('show');
+            aiBtn.disabled = false;
+            humanBtn.disabled = false;
+            quizText.style.display = 'none';
+            textLoading.style.display = 'flex';
+            hideError();
+
+            try {
+                // Get random text (try up to 10 times to avoid repeats)
+                let attempts = 0;
+                let data;
+                do {
+                    const response = await fetch('/quiz/text');
+                    if (!response.ok) {
+                        throw new Error('Failed to load quiz text');
+                    }
+                    data = await response.json();
+                    attempts++;
+                } while (usedTextIds.has(data.text_id) && attempts < 10);
+                
+                currentTextId = data.text_id;
+                currentTrueLabel = data.true_label;
+                usedTextIds.add(currentTextId);
+
+                // Display text
+                updateProgress(); // Update progress when loading new question
+                quizText.textContent = data.text;
+                textLoading.style.display = 'none';
+                quizText.style.display = 'block';
+            } catch (err) {
+                showError(err.message);
+                textLoading.style.display = 'none';
+            }
+        }
+
+        async function checkAnswer(userAnswer) {
+            if (answerSelected || !currentTextId) return;
+            
+            answerSelected = true;
+            aiBtn.disabled = true;
+            humanBtn.disabled = true;
+            showLoading();
+            hideError();
+
+            try {
+                const response = await fetch('/quiz/check', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        text_id: currentTextId,
+                        answer: userAnswer
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to check answer');
+                }
+
+                const data = await response.json();
+                
+                // Update score
+                score.total++;
+                currentQuestion++;
+                if (data.is_correct) {
+                    score.correct++;
+                }
+                updateScore();
+                updateProgress();
+
+                // Show result
+                showResult(data);
+
+                // Update button text if quiz is complete
+                if (currentQuestion >= totalQuestions) {
+                    nextBtn.textContent = 'View Results →';
+                } else {
+                    nextBtn.textContent = 'Next Question →';
+                }
+            } catch (err) {
+                showError(err.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function showResult(data) {
+            // Result title
+            if (data.is_correct) {
+                resultTitle.textContent = '✓ Correct!';
+                resultTitle.className = 'result-title result-correct';
+            } else {
+                resultTitle.textContent = '✗ Incorrect';
+                resultTitle.className = 'result-title result-incorrect';
+            }
+
+            // Result details
+            resultDetails.innerHTML = `
+                <div class="result-detail-item">
+                    <strong>Your Answer:</strong> ${data.user_answer}
+                </div>
+                <div class="result-detail-item">
+                    <strong>Correct Answer:</strong> ${data.true_label}
+                </div>
+            `;
+
+            // Model prediction
+            modelPrediction.innerHTML = `
+                <div class="model-prediction-title">🤖 AI Model Prediction:</div>
+                <div class="result-detail-item">
+                    <strong>Prediction:</strong> ${data.model_prediction}
+                </div>
+                <div class="result-detail-item">
+                    <strong>Confidence:</strong> ${(data.model_confidence * 100).toFixed(1)}%
+                </div>
+                <div class="probabilities">
+                    ${Object.entries(data.model_probabilities).map(([label, prob]) => `
+                        <div class="prob-item">
+                            <div class="prob-label">${label}</div>
+                            <div class="prob-bar">
+                                <div class="prob-fill" style="width: ${prob * 100}%"></div>
+                            </div>
+                            <div class="prob-value">${(prob * 100).toFixed(1)}%</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+
+            resultPanel.classList.add('show');
+        }
+
+        function updateScore() {
+            scoreEl.textContent = `${score.correct}/${score.total}`;
+            correctEl.textContent = score.correct;
+            const accuracy = score.total > 0 ? (score.correct / score.total * 100).toFixed(0) : 0;
+            accuracyEl.textContent = `${accuracy}%`;
+        }
+
+        function updateProgress() {
+            // Show current question number (1-indexed for display)
+            currentQuestionEl.textContent = currentQuestion + 1;
+            totalQuestionsEl.textContent = totalQuestions;
+        }
+
+        function showCompletionScreen() {
+            quizScreen.classList.remove('active');
+            completionScreen.classList.add('active');
+            
+            finalScoreEl.textContent = `${score.correct}/${score.total}`;
+            finalCorrectEl.textContent = score.correct;
+            const accuracy = score.total > 0 ? (score.correct / score.total * 100).toFixed(0) : 0;
+            finalAccuracyEl.textContent = `${accuracy}%`;
+        }
+
+        function showLoading() {
+            loading.style.display = 'block';
+        }
+
+        function hideLoading() {
+            loading.style.display = 'none';
+        }
+
+        function showError(message) {
+            error.textContent = message;
+            error.style.display = 'block';
+        }
+
+        function hideError() {
+            error.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
+

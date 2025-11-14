@@ -6,3 +6,5 @@ pyyaml
 kaggle
 kagglehub
 gradio
+flask
+flask-cors
