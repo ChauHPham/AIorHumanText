@@ -14,7 +14,11 @@ class QuizDatasetLoader:
     """
     def __init__(self, data_dir='data', csv_files=None):
         self.data_dir = data_dir
-        self.csv_files = csv_files or ['ai_vs_human_text.csv', 'dataset.csv']
+        # quiz_samples.csv is the small bundled starter set shipped in the
+        # repo, so the quiz works out of the box with no download. The
+        # Kaggle CSVs (ai_vs_human_text.csv / dataset.csv) are loaded first
+        # when present, so a full download still takes precedence.
+        self.csv_files = csv_files or ['ai_vs_human_text.csv', 'dataset.csv', 'quiz_samples.csv']
         self.samples = []
         self.class_names = ['Human-written', 'AI-generated']
         self.load_samples()
@@ -42,8 +46,9 @@ class QuizDatasetLoader:
                         text_col = col
                         break
                 
-                # Find label column
-                for col in ['label', 'target', 'class', 'is_ai']:
+                # Find label column. 'generated' is the column used by the
+                # AI vs Human Text Kaggle dataset (0 = human, 1 = AI).
+                for col in ['label', 'target', 'class', 'is_ai', 'generated']:
                     if col in df.columns:
                         label_col = col
                         break

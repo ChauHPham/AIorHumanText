@@ -1,10 +1,13 @@
+# Pinned to major versions: unpinned requirements meant a rebuild could
+# pull transformers 5 / Gradio 6, which break the Desklib loading code
+# (e.g. torch_dtype was renamed) and the Gradio API used here.
 pandas
 scikit-learn
-torch
-transformers
+torch>=2.5,<3
+transformers>=4.48,<5
 pyyaml
 kaggle
 kagglehub
-gradio
+gradio>=5,<6
 flask
 flask-cors

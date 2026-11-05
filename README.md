@@ -1,3 +1,14 @@
+---
+title: AI Text Detector Quiz
+emoji: 📝
+colorFrom: blue
+colorTo: purple
+sdk: gradio
+sdk_version: 5.49.1
+app_file: gradio_quiz_app.py
+pinned: false
+---
+
 # AI Text Detector
 
 A learning project for detecting AI-generated vs. human-written text with a modular Python package, YAML configs, GPU auto-detection, CLI, and a **Gradio web interface**.

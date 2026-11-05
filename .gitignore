@@ -20,6 +20,7 @@ data/*.zip
 data/*.json
 data/*.jsonl
 data/*.csv
+!data/quiz_samples.csv
 models/*
 !models/.gitkeep
 

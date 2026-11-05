@@ -9,6 +9,16 @@ import torch
 import torch.nn as nn
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, AutoConfig, AutoModel, PreTrainedModel
 
+# transformers 5 renamed the `torch_dtype` argument to `dtype`. Passing the
+# wrong name raises TypeError, so pick the right one for the installed
+# version. This is what broke a rebuild with unpinned requirements.
+try:
+    from packaging.version import Version as _Version
+    import transformers as _transformers
+    _DTYPE_KWARG = "dtype" if _Version(_transformers.__version__) >= _Version("5.0") else "torch_dtype"
+except Exception:
+    _DTYPE_KWARG = "torch_dtype"
+
 class DesklibAIDetectionModel(PreTrainedModel):
     """Desklib AI Detection Model - Pre-trained model for AI text detection"""
     config_class = AutoConfig
@@ -74,7 +84,7 @@ class DetectorModel:
                         # Load base model first
                         base_model = AutoModel.from_pretrained(
                             model_name,
-                            torch_dtype=torch.float32,
+                            **{_DTYPE_KWARG: torch.float32},
                             low_cpu_mem_usage=True,
                             device_map="cpu"
                         )
@@ -120,7 +130,7 @@ class DetectorModel:
                     try:
                         self.model = DesklibAIDetectionModel.from_pretrained(
                             model_name,
-                            torch_dtype=torch.float32,
+                            **{_DTYPE_KWARG: torch.float32},
                             low_cpu_mem_usage=True
                         )
                         print("✅ Desklib model loaded via from_pretrained!")

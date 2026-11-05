@@ -17,9 +17,13 @@ A fun quiz game where you guess whether text samples are AI-generated or human-w
 pip install -r requirements.txt
 ```
 
-2. Ensure your dataset CSV files are in the `data/` folder:
+2. The quiz works out of the box: `data/quiz_samples.csv` (40 samples, 20 human / 20 AI) is bundled in the repo.
+
+   For a larger quiz, put a full dataset CSV in the `data/` folder (loaded first when present):
    - `ai_vs_human_text.csv`
    - `dataset.csv`
+
+   Get one with `python scripts/kaggle_downloader.py` (needs a Kaggle token) — see `data/README_DATA.md`.
 
 ## Running the Quiz
 

@@ -33,11 +33,17 @@ def load_model():
     
     model_path = "models/ai_detector"
     
-    # Check if model directory exists AND has model files
+    # Check if model directory exists AND has model files.
+    # Accept safetensors too: modern saves ship model.safetensors, not
+    # pytorch_model.bin, so requiring the .bin file meant a valid trained
+    # model was never detected.
     has_model = False
     if os.path.exists(model_path):
-        required_files = ["config.json", "pytorch_model.bin"]
-        has_model = all(os.path.exists(os.path.join(model_path, f)) for f in required_files)
+        has_weights = any(
+            os.path.exists(os.path.join(model_path, f))
+            for f in ["pytorch_model.bin", "model.safetensors"]
+        )
+        has_model = os.path.exists(os.path.join(model_path, "config.json")) and has_weights
     
     if has_model:
         try:
@@ -80,7 +86,22 @@ def load_quiz_dataset(data_dir='data'):
         print(error_msg)
         logger.error(error_msg, exc_info=True)
         quiz_loader = None
-    
+
+    # Fallback: no local CSV at all (e.g. the bundled quiz_samples.csv was
+    # deleted). Try downloading the full Kaggle dataset once; if that fails
+    # (no network / no Kaggle access) the quiz still works from the bundled
+    # file when it is present, and load_quiz_dataset simply returns None.
+    try:
+        from ai_text_detector.download_data import download_ai_vs_human_dataset
+        logger.info("No quiz samples found locally, trying Kaggle download...")
+        download_ai_vs_human_dataset()
+        quiz_loader = QuizDatasetLoader(data_dir=data_dir)
+        if len(quiz_loader) > 0:
+            logger.info(f"✓ Quiz dataset downloaded: {len(quiz_loader)} samples")
+            return quiz_loader
+    except Exception as e:
+        logger.warning(f"Kaggle download fallback failed (quiz will use bundled samples if present): {e}")
+
     return None
 
 # Initialize on import
@@ -96,7 +117,7 @@ def start_quiz(num_questions):
     used_ids.clear()
     current_sample = None
     
-    return get_next_question(num_questions) + (gr.update(visible=True), gr.update(visible=False))
+    return get_next_question(num_questions) + (gr.update(visible=False), gr.update(visible=False))
 
 def get_next_question(num_questions):
     """Get the next question"""
@@ -234,7 +255,7 @@ def next_question(num_questions):
     """Move to next question"""
     if current_question >= num_questions:
         return start_quiz(num_questions)
-    return get_next_question(num_questions) + (gr.update(visible=True), gr.update(visible=False))
+    return get_next_question(num_questions) + (gr.update(visible=False), gr.update(visible=False))
 
 # Create Gradio interface
 with gr.Blocks(title="AI Text Detector Quiz", theme=gr.themes.Soft()) as app:
@@ -250,10 +271,10 @@ with gr.Blocks(title="AI Text Detector Quiz", theme=gr.themes.Soft()) as app:
         )
         start_btn = gr.Button("Start Quiz", variant="primary", size="lg")
     
-    progress_display = gr.Markdown("", visible=False)
-    score_display = gr.Markdown("", visible=False)
+    progress_display = gr.Markdown("", visible=True)
+    score_display = gr.Markdown("", visible=True)
     
-    with gr.Row(visible=False) as quiz_row:
+    with gr.Row() as quiz_row:
         with gr.Column():
             text_display = gr.Textbox(
                 label="Text Sample",
@@ -273,10 +294,13 @@ with gr.Blocks(title="AI Text Detector Quiz", theme=gr.themes.Soft()) as app:
             restart_btn = gr.Button("🎉 Quiz Complete! Play Again?", visible=False, variant="primary")
     
     # Event handlers
+    # start_quiz / get_next_question return 7 values, in this order:
+    # text, AI button, Human button, progress, score, restart button, next button
+    _quiz_outputs = [text_display, ai_btn, human_btn, progress_display, score_display, restart_btn, next_btn]
     start_btn.click(
         fn=start_quiz,
         inputs=num_questions,
-        outputs=[text_display, quiz_row, progress_display, progress_display, score_display]
+        outputs=_quiz_outputs
     )
     
     def check_ai_answer(num_q):
@@ -306,9 +330,12 @@ with gr.Blocks(title="AI Text Detector Quiz", theme=gr.themes.Soft()) as app:
     restart_btn.click(
         fn=start_quiz,
         inputs=num_questions,
-        outputs=[text_display, quiz_row, progress_display, progress_display, score_display]
+        outputs=_quiz_outputs
     )
 
 if __name__ == "__main__":
-    app.launch(share=True)
+    # share=True opens a gradio.live tunnel, which fails/hangs on
+    # Hugging Face Spaces. Only enable it locally with GRADIO_SHARE=1.
+    share = os.environ.get("GRADIO_SHARE", "0") == "1"
+    app.launch(share=share, server_name="0.0.0.0", server_port=7860)
 

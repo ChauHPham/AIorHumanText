@@ -168,12 +168,15 @@ def load_detector():
     
     model_path = "models/ai_detector"
     
-    # Check if model directory exists AND has model files
+    # Check if model directory exists AND has model files.
+    # Accept safetensors too (see gradio_app.py).
     has_model = False
     if os.path.exists(model_path):
-        # Check for required model files
-        required_files = ["config.json", "pytorch_model.bin"]
-        has_model = all(os.path.exists(os.path.join(model_path, f)) for f in required_files)
+        has_weights = any(
+            os.path.exists(os.path.join(model_path, f))
+            for f in ["pytorch_model.bin", "model.safetensors"]
+        )
+        has_model = os.path.exists(os.path.join(model_path, "config.json")) and has_weights
     
     if has_model:
         try:

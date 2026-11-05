@@ -32,12 +32,17 @@ def load_model():
     
     model_path = "models/ai_detector"
     
-    # Check if model directory exists AND has model files
+    # Check if model directory exists AND has model files.
+    # Accept safetensors too: modern saves (and the Desklib model) ship
+    # model.safetensors, not pytorch_model.bin, so requiring the .bin file
+    # meant a valid trained model was never detected.
     has_model = False
     if os.path.exists(model_path):
-        # Check for required model files
-        required_files = ["config.json", "pytorch_model.bin"]
-        has_model = all(os.path.exists(os.path.join(model_path, f)) for f in required_files)
+        has_weights = any(
+            os.path.exists(os.path.join(model_path, f))
+            for f in ["pytorch_model.bin", "model.safetensors"]
+        )
+        has_model = os.path.exists(os.path.join(model_path, "config.json")) and has_weights
     
     if has_model:
         try:
@@ -158,4 +163,8 @@ with gr.Blocks(title="AI Text Detector", theme=gr.themes.Soft()) as app:
     )
 
 if __name__ == "__main__":
-    app.launch(share=True, server_name="0.0.0.0", server_port=7860)
+    # share=True opens a gradio.live tunnel, which fails/hangs on
+    # Hugging Face Spaces (the Space already serves on port 7860).
+    # Only enable it locally with GRADIO_SHARE=1.
+    share = os.environ.get("GRADIO_SHARE", "0") == "1"
+    app.launch(share=share, server_name="0.0.0.0", server_port=7860)
