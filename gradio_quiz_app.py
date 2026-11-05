@@ -170,13 +170,21 @@ def check_answer(user_answer, num_questions):
     """Check the user's answer"""
     global current_question, score, current_sample, detector
     
+    # Outputs, in the order the AI/Human buttons declare them:
+    # [result_display, ai_btn, human_btn, restart_btn, next_btn,
+    #  progress_display, score_display]
+    # NOTE: result_display starts visible=False, so the result must be
+    # returned as an update with visible=True or it never shows. And
+    # next_btn must be returned as an update with visible=True — a plain
+    # "" does not make it appear. (Both bugs shipped: answers showed
+    # nothing and there was no Next button.)
     if current_sample is None:
         return (
-            "⚠️ No question loaded. Please start a new quiz.",
+            gr.update(value="⚠️ No question loaded. Please start a new quiz.", visible=True),
             gr.update(visible=False),
             gr.update(visible=False),
-            "",
-            "",
+            gr.update(visible=False),
+            gr.update(visible=False),
             f"Question 0/{num_questions}",
             "Score: 0/0 | Accuracy: 0%"
         )
@@ -220,33 +228,33 @@ def check_answer(user_answer, num_questions):
             final_text += f"**Final Score:** {score['correct']}/{score['total']}\n"
             final_text += f"**Final Accuracy:** {accuracy:.0f}%"
             return (
-                final_text,
+                gr.update(value=final_text, visible=True),
                 gr.update(visible=False),
                 gr.update(visible=False),
                 gr.update(visible=True, value="🎉 Quiz Complete! Play Again?"),
-                "",
+                gr.update(visible=False),
                 progress,
                 score_text
             )
-        
+
         return (
-            result_text,
+            gr.update(value=result_text, visible=True),
+            gr.update(visible=False),
+            gr.update(visible=False),
             gr.update(visible=False),
             gr.update(visible=True),
-            "",
-            "",
             progress,
             score_text
         )
-        
+
     except Exception as e:
         logger.error(f"Error checking answer: {e}")
         return (
-            f"⚠️ Error processing answer: {str(e)}",
+            gr.update(value=f"⚠️ Error processing answer: {str(e)}", visible=True),
             gr.update(visible=False),
             gr.update(visible=False),
-            "",
-            "",
+            gr.update(visible=False),
+            gr.update(visible=True),
             f"Question {current_question}/{num_questions}",
             f"Score: {score['correct']}/{score['total']} | Accuracy: {(score['correct']/score['total']*100) if score['total'] > 0 else 0:.0f}%"
         )
@@ -264,7 +272,10 @@ with gr.Blocks(title="AI Text Detector Quiz", theme=gr.themes.Soft()) as app:
     
     with gr.Row():
         num_questions = gr.Dropdown(
-            choices=[10, 20, 30],
+            # 40 is the whole curated set, so it is the max; 5 is the
+            # floor — below that the accuracy % is noise (each question
+            # swings it by 20+ points) and the score means nothing.
+            choices=[5, 10, 20, 30, 40],
             value=10,
             label="Number of Questions",
             interactive=True
